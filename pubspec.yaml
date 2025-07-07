@@ -1,0 +1,16 @@
+name: partial_json_expander
+description: Progressive JSON repair + schema defaults for streaming LLM output.
+version: 0.1.0
+
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+
+dependencies:
+  json_schema: ^5.1.3
+  logging: ^1.2.0
+
+dev_dependencies:
+  all_lint_rules_community: ^0.0.43
+  exception_hiding_lint:
+    path: /Users/csells/code/exception_hiding_lint
+  test: ^1.24.0
