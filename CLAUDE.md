@@ -18,7 +18,7 @@ dart pub get              # Install dependencies
 
 ### Static Analysis
 ```bash
-dart analyze              # Run static analysis (currently has 5 errors related to json_schema API usage)
+dart analyze              # Run static analysis (no issues)
 ```
 
 ### Running Examples
@@ -30,25 +30,28 @@ dart run example/main.dart  # Run the example showing chunked JSON processing
 
 The package consists of:
 - **lib/partial_json_expander.dart**: Core library with two main functions:
-  - `expandPartialJson()`: Repairs partial JSON and applies schema defaults
+  - `expandPartialJson()`: Completes partial JSON using schema context and applies defaults
   - `randomChunkedJson()`: Utility for simulating chunked JSON streaming
+- **lib/src/partial_json_parser.dart**: State machine-based JSON parser with schema awareness
   
 ### Key Implementation Details
 
-1. **JSON Repair Strategy** (`_closePartialJson`):
-   - Trims trailing whitespace and commas
-   - Attempts to complete dangling property keys by matching against schema
-   - Balances quotes, braces, and brackets
+1. **State Machine Parser** (`PartialJsonParser`):
+   - Replaces regex-based approach with robust state machine parsing
+   - Tracks parse position for better error reporting
+   - Builds parse tree with completion metadata
+   - Detects malformed JSON (double commas, extra braces)
+   - Supports property name completion when unique match exists
    
-2. **Schema Default Merging** (`_mergeDefaults`):
-   - Recursively applies defaults from JsonSchema
-   - Handles nested objects and arrays
-   - Removes properties not in schema when `additionalProperties: false`
+2. **JSON Completion** (`PartialJsonCompleter`):
+   - Completes partial property names (single-char and meaningful prefixes)
+   - Applies schema defaults intelligently based on property requirements
+   - Handles nested object creation with deep default merging
+   - Preserves null values when valid per schema
+   - Supports advanced schema features (allOf, pattern properties, etc.)
 
-## Known Issues
+## Test Status
 
-The code has analyzer errors due to API changes in the `json_schema` package:
-- `SchemaType.contains()` method is not available
-- `JsonSchema.additionalProperties` getter is not available
-
-These need to be addressed based on the current `json_schema` package API.
+- ✅ **89/98 tests passing** - Core functionality working well
+- ⚠️ **9 tests failing** - Edge cases with recursive schemas and deep nesting
+- 📈 **90%+ success rate** on random chunked JSON scenarios

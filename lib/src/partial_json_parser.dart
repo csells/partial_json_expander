@@ -59,7 +59,7 @@ class ObjectNode extends ParseNode {
 }
 
 class ObjectEntry {
-  ObjectEntry(this.key, this.value, this.hasColon);
+  ObjectEntry(this.key, this.value, {required this.hasColon});
   final String? key;
   final ParseNode? value;
   final bool hasColon;
@@ -74,7 +74,7 @@ class ArrayNode extends ParseNode {
 }
 
 class StringNode extends ParseNode {
-  StringNode(super.start, super.end, this.value, this.closed);
+  StringNode(super.start, super.end, this.value, {required this.closed});
   final String value;
   final bool closed;
 }
@@ -85,7 +85,7 @@ class NumberNode extends ParseNode {
 }
 
 class BoolNode extends ParseNode {
-  BoolNode(super.start, super.end, this.value);
+  BoolNode(super.start, super.end, {required this.value});
   final bool value;
 }
 
@@ -258,7 +258,7 @@ class PartialJsonParser {
       }
 
       // Store both the key and whether it's an incomplete string
-      final entry = ObjectEntry(key, value, hasColon);
+      final entry = ObjectEntry(key, value, hasColon: hasColon);
       if (isIncompleteStringKey && key != null) {
         // Mark this entry as having an incomplete string key
         // We'll handle this in the completer
@@ -360,7 +360,7 @@ class PartialJsonParser {
     }
 
     final end = closed ? ctx.position : null;
-    return StringNode(start, end, buffer.toString(), closed);
+    return StringNode(start, end, buffer.toString(), closed: closed);
   }
 
   String? _parseEscapeSequence(ParseContext ctx) {
@@ -479,17 +479,17 @@ class PartialJsonParser {
     final start = ctx.position;
 
     if (_matchWord(ctx, 'true')) {
-      return BoolNode(start, ctx.position, true);
+      return BoolNode(start, ctx.position, value: true);
     } else if (_matchWord(ctx, 'false')) {
-      return BoolNode(start, ctx.position, false);
+      return BoolNode(start, ctx.position, value: false);
     }
 
     // Partial boolean
     final partial = _readPartialWord(ctx);
     if ('true'.startsWith(partial)) {
-      return BoolNode(start, null, true);
+      return BoolNode(start, null, value: true);
     } else if ('false'.startsWith(partial)) {
-      return BoolNode(start, null, false);
+      return BoolNode(start, null, value: false);
     }
 
     return null;
@@ -712,7 +712,8 @@ class PartialJsonCompleter {
 
           // Special handling for different test cases:
           // - Single char keys at start: complete (e.g., {"f)
-          // - Multi-char keys at start that match common prefixes: complete (e.g., {"temp)
+          // - Multi-char keys at start that match common prefixes:
+          //   complete (e.g., {"temp)
           // - Keys after other properties: only complete if single char
           // - Other multi-char keys: fail
 
@@ -729,7 +730,8 @@ class PartialJsonCompleter {
           // Allow very short keys (1 char) or common meaningful prefixes
           if (!isAfterOtherProperty && key.length > 2) {
             // Check if this looks like a meaningful prefix
-            // Common prefixes that should complete: temp, tmp, conf, config, etc.
+            // Common prefixes that should complete:
+            // temp, tmp, conf, config, etc.
             final looksLikeMeaningfulPrefix =
                 key.length == 4 && matches.first.startsWith(key);
             if (!looksLikeMeaningfulPrefix) {
@@ -855,7 +857,8 @@ class PartialJsonCompleter {
           if (propJson.containsKey('default')) {
             merged[propEntry.key] = propEntry.value.defaultValue;
           } else if (_hasNestedDefaults(propEntry.value)) {
-            // Property itself doesn't have a default, but its nested properties do
+            // Property itself doesn't have a default,
+            // but its nested properties do
             merged[propEntry.key] = _getDefaultForSchema(propEntry.value);
           }
         }
@@ -874,7 +877,8 @@ class PartialJsonCompleter {
         if (propJson.containsKey('default')) {
           result[propEntry.key] = propEntry.value.defaultValue;
         } else if (_hasNestedDefaults(propEntry.value)) {
-          // Property itself doesn't have a default, but its nested properties do
+          // Property itself doesn't have a default,
+          // but its nested properties do
           result[propEntry.key] = _getDefaultForSchema(propEntry.value);
         }
       }
