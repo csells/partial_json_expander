@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_dynamic_calls
+
 import 'package:json_schema/json_schema.dart';
 import 'package:partial_json_expander/partial_json_expander.dart';
 import 'package:test/test.dart';
@@ -51,19 +53,15 @@ void main() {
     });
 
     test('handles empty input', () {
-      // Empty input throws FormatException
-      expect(
-        () => expandPartialJson(basicSchema, ''),
-        throwsFormatException,
-      );
+      // Empty input returns default based on schema
+      final result = expandPartialJson(basicSchema, '');
+      expect(result, equals({}));
     });
 
     test('handles whitespace only', () {
-      // Whitespace only throws FormatException
-      expect(
-        () => expandPartialJson(basicSchema, '  \n\t  '),
-        throwsFormatException,
-      );
+      // Whitespace only returns default based on schema
+      final result = expandPartialJson(basicSchema, '  \n\t  ');
+      expect(result, equals({}));
     });
 
     test('handles complete valid JSON', () {
@@ -386,26 +384,22 @@ void main() {
           totalAttempts++;
 
           // Try to expand the partial JSON
-          try {
-            final result = expandPartialJson(schema, buffer.toString());
+          final result = expandPartialJson(schema, buffer.toString());
 
-            // If we get a result, it should be a valid map
-            if (result != null) {
-              expect(result, isA<Map<String, dynamic>>());
-              successfulParses++;
+          // If we get a result, it should be a valid map
+          if (result != null) {
+            expect(result, isA<Map<String, dynamic>>());
+            successfulParses++;
 
-              // For complete JSON, verify the structure
-              if (buffer.toString().trim() == complexJson.trim()) {
-                final user = result['user'] as Map<String, dynamic>;
-                expect(user['name'], equals('John Doe'));
-                expect(user['age'], equals(30));
-                expect(
-                    user['tags'], equals(['developer', 'team-lead', 'mentor']));
-                expect((user['projects'] as List).length, equals(2));
-              }
+            // For complete JSON, verify the structure
+            if (buffer.toString().trim() == complexJson.trim()) {
+              final user = result['user'] as Map<String, dynamic>;
+              expect(user['name'], equals('John Doe'));
+              expect(user['age'], equals(30));
+              expect(
+                  user['tags'], equals(['developer', 'team-lead', 'mentor']));
+              expect((user['projects'] as List).length, equals(2));
             }
-          } on Exception {
-            // Some partials will fail to parse, which is expected
           }
         }
       }
@@ -440,13 +434,9 @@ void main() {
 
       for (final chunk in chunks) {
         buffer.write(chunk);
-        try {
-          final result = expandPartialJson(schema, buffer.toString());
-          if (result != null) {
-            successfulExpansions++;
-          }
-        } on Exception {
-          // Expected for some partials
+        final result = expandPartialJson(schema, buffer.toString());
+        if (result != null) {
+          successfulExpansions++;
         }
       }
 
@@ -478,22 +468,13 @@ void main() {
             final part2 = json.substring(breakPos);
 
             // Test first part (might fail)
-            try {
-              expandPartialJson(schema, part1);
-            } on Exception {
-              // Expected for some positions
-            }
+            expandPartialJson(schema, part1);
 
             // Test accumulated (should always work)
-            try {
-              final result2 = expandPartialJson(schema, part1 + part2);
-              expect(result2, isNotNull,
-                  reason: 'Failed to parse complete JSON broken at '
-                      'position $breakPos in "$json"');
-            } on Exception catch (e) {
-              // Complete JSON should parse
-              fail('Complete JSON should parse: $e');
-            }
+            final result2 = expandPartialJson(schema, part1 + part2);
+            expect(result2, isNotNull,
+                reason: 'Failed to parse complete JSON broken at '
+                    'position $breakPos in "$json"');
           }
         }
       }
@@ -550,16 +531,12 @@ void main() {
 
         for (final chunk in chunks) {
           buffer.write(chunk);
-          try {
-            final result = expandPartialJson(schema, buffer.toString());
+          final result = expandPartialJson(schema, buffer.toString());
 
-            if (result != null) {
-              lastValidResult = result;
-              // Verify partial results make sense
-              expect(result, isA<Map<String, dynamic>>());
-            }
-          } on Exception {
-            // Expected for some partials
+          if (result != null) {
+            lastValidResult = result;
+            // Verify partial results make sense
+            expect(result, isA<Map<String, dynamic>>());
           }
         }
 

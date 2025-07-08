@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_dynamic_calls
+
 import 'package:json_schema/json_schema.dart';
 import 'package:partial_json_expander/partial_json_expander.dart';
 import 'package:test/test.dart';
@@ -12,12 +14,8 @@ void main() {
       expect(expandPartialJson(schema, '"hel'), equals('hel'));
       expect(expandPartialJson(schema, '"hello"'), equals('hello'));
 
-      // Test with empty string should use default
-      try {
-        expandPartialJson(schema, '');
-      } on Exception {
-        // Expected - can't parse empty string
-      }
+      // Test with empty string should throw FormatException
+      expect(() => expandPartialJson(schema, ''), throwsFormatException);
     });
 
     test('handles atomic number at root level', () async {
@@ -38,11 +36,7 @@ void main() {
       expect(expandPartialJson(schema, 'false'), equals(false));
 
       // Partial booleans should fail
-      try {
-        expandPartialJson(schema, 'tr');
-      } on Exception {
-        // Expected
-      }
+      expect(() => expandPartialJson(schema, 'tr'), throwsFormatException);
     });
 
     test('handles null at root level', () async {
@@ -612,13 +606,9 @@ void main() {
 
       // Partial deep nesting
       final partialJson = json.toString().substring(0, json.length ~/ 2);
-      try {
-        final result = expandPartialJson(schema, partialJson);
-        if (result != null) {
-          expect(result, isA<Map<String, dynamic>>());
-        }
-      } on Exception {
-        // Expected for some partial positions
+      final result = expandPartialJson(schema, partialJson);
+      if (result != null) {
+        expect(result, isA<Map<String, dynamic>>());
       }
     });
   });
@@ -737,29 +727,25 @@ void main() {
 
         for (final chunk in chunks) {
           buffer.write(chunk);
-          try {
-            final result = expandPartialJson(schema, buffer.toString());
-            if (result != null) {
-              lastValidParse = result;
+          final result = expandPartialJson(schema, buffer.toString());
+          if (result != null) {
+            lastValidParse = result;
 
-              // Verify defaults are applied to incomplete parts
-              expect(result, isA<Map<String, dynamic>>());
+            // Verify defaults are applied to incomplete parts
+            expect(result, isA<Map<String, dynamic>>());
 
-              // Check if defaults are present when expected
-              if (!buffer.toString().contains('"config"')) {
-                expect(result['config'], isNull);
-              }
+            // Check if defaults are present when expected
+            if (!buffer.toString().contains('"config"')) {
+              expect(result['config'], isNull);
+            }
 
-              if (buffer.toString().contains('"config":{') &&
-                  !buffer.toString().contains('"retries"')) {
-                final config = result['config'] as Map<String, dynamic>?;
-                if (config != null) {
-                  expect(config['retries'], equals(3));
-                }
+            if (buffer.toString().contains('"config":{') &&
+                !buffer.toString().contains('"retries"')) {
+              final config = result['config'] as Map<String, dynamic>?;
+              if (config != null) {
+                expect(config['retries'], equals(3));
               }
             }
-          } on Exception {
-            // Expected for some partials
           }
         }
 

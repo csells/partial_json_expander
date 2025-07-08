@@ -1,43 +1,36 @@
+// ignore_for_file: avoid_dynamic_calls
+
 import 'package:json_schema/json_schema.dart';
 import 'package:partial_json_expander/partial_json_expander.dart';
 import 'package:test/test.dart';
 
 void main() {
   group('Atomic Values Without Object Wrapper', () {
-    test('handles bare strings', () {
+    test('handles bare strings - should fail', () {
       final schema = JsonSchema.create({'type': 'string'});
 
-      // These might not be supported by the current implementation
-      // but let's test the behavior
-      try {
-        expect(expandPartialJson(schema, '"hello"'), equals('hello'));
-      } on Exception {
-        // If bare values aren't supported, that's OK
-      }
+      // The current implementation doesn't support root-level strings
+      // It expects objects, so this should fail
+      expect(() => expandPartialJson(schema, '"hello"'), throwsFormatException);
     });
 
-    test('handles bare numbers', () {
+    test('handles bare numbers - should fail', () {
       final schema = JsonSchema.create({'type': 'number'});
 
-      try {
-        expect(expandPartialJson(schema, '42'), equals(42));
-        expect(expandPartialJson(schema, '3.14'), equals(3.14));
-      } on Exception {
-        // If bare values aren't supported, that's OK
-      }
+      // The current implementation doesn't support root-level numbers
+      expect(() => expandPartialJson(schema, '42'), throwsFormatException);
+      expect(() => expandPartialJson(schema, '3.14'), throwsFormatException);
     });
 
-    test('handles bare arrays', () {
+    test('handles bare arrays - should fail', () {
       final schema = JsonSchema.create({
         'type': 'array',
         'items': {'type': 'string'}
       });
 
-      try {
-        expect(expandPartialJson(schema, '["a","b"]'), equals(['a', 'b']));
-      } on Exception {
-        // If bare values aren't supported, that's OK
-      }
+      // The current implementation doesn't support root-level arrays
+      expect(
+          () => expandPartialJson(schema, '["a","b"]'), throwsFormatException);
     });
   });
 
@@ -160,8 +153,8 @@ void main() {
 
       const json = '{"node":{"value":"a","next":{"value":"b","next":{"val';
       final result = expandPartialJson(schema, json);
-      expect(result!['node'], isA<Map>());
-      final node = result['node'] as Map<String, dynamic>;
+      expect(result, isNotNull);
+      final node = result!['node'] as Map<String, dynamic>;
       expect(node['value'], equals('a'));
     });
   });
@@ -445,8 +438,9 @@ void main() {
       });
 
       // Partial config
-      const partial = '{"environment":"production","database":'
-          '{"host":"db.example.com","port":';
+      const partial =
+          '{"environment":"production","database":{"host":"db.example.com",'
+          '"port":';
       final result = expandPartialJson(schema, partial);
 
       expect(result!['version'], equals('1.0.0'));

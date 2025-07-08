@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_dynamic_calls
+
 import 'package:json_schema/json_schema.dart';
 import 'package:partial_json_expander/partial_json_expander.dart';
 import 'package:test/test.dart';
@@ -145,7 +147,7 @@ void main() {
             'type': 'number',
             'minimum': 0.0,
             'maximum': 100.0,
-            'exclusiveMinimum': true,
+            'exclusiveMinimum': 0.0,
             'default': 50.0
           }
         }
