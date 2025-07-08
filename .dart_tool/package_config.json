@@ -254,6 +254,12 @@
       "languageVersion": "3.4"
     },
     {
+      "name": "petitparser",
+      "rootUri": "file:///Users/csells/.pub-cache/hosted/pub.dev/petitparser-6.1.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.5"
+    },
+    {
       "name": "pool",
       "rootUri": "file:///Users/csells/.pub-cache/hosted/pub.dev/pool-1.5.1",
       "packageUri": "lib/",

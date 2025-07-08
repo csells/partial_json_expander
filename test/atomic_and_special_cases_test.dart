@@ -6,31 +6,35 @@ import 'package:test/test.dart';
 
 void main() {
   group('Atomic Values Without Object Wrapper', () {
-    test('handles bare strings - should fail', () {
+    test('handles bare strings', () {
       final schema = JsonSchema.create({'type': 'string'});
 
-      // The current implementation doesn't support root-level strings
-      // It expects objects, so this should fail
-      expect(() => expandPartialJson(schema, '"hello"'), throwsFormatException);
+      // Root-level strings are valid JSON
+      expect(expandPartialJson(schema, '"hello"'), equals('hello'));
+      expect(expandPartialJson(schema, '""'), equals(''));
+      expect(expandPartialJson(schema, '"test string"'), equals('test string'));
     });
 
-    test('handles bare numbers - should fail', () {
+    test('handles bare numbers', () {
       final schema = JsonSchema.create({'type': 'number'});
 
-      // The current implementation doesn't support root-level numbers
-      expect(() => expandPartialJson(schema, '42'), throwsFormatException);
-      expect(() => expandPartialJson(schema, '3.14'), throwsFormatException);
+      // Root-level numbers are valid JSON
+      expect(expandPartialJson(schema, '42'), equals(42));
+      expect(expandPartialJson(schema, '3.14'), equals(3.14));
+      expect(expandPartialJson(schema, '-123'), equals(-123));
+      expect(expandPartialJson(schema, '0'), equals(0));
     });
 
-    test('handles bare arrays - should fail', () {
+    test('handles bare arrays', () {
       final schema = JsonSchema.create({
         'type': 'array',
         'items': {'type': 'string'}
       });
 
-      // The current implementation doesn't support root-level arrays
-      expect(
-          () => expandPartialJson(schema, '["a","b"]'), throwsFormatException);
+      // Root-level arrays are valid JSON
+      expect(expandPartialJson(schema, '["a","b"]'), equals(['a', 'b']));
+      expect(expandPartialJson(schema, '[]'), equals([]));
+      expect(expandPartialJson(schema, '["single"]'), equals(['single']));
     });
   });
 

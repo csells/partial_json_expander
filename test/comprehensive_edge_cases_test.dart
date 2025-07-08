@@ -14,8 +14,8 @@ void main() {
       expect(expandPartialJson(schema, '"hel'), equals('hel'));
       expect(expandPartialJson(schema, '"hello"'), equals('hello'));
 
-      // Test with empty string should throw FormatException
-      expect(() => expandPartialJson(schema, ''), throwsFormatException);
+      // Test with empty string should return the default
+      expect(expandPartialJson(schema, ''), equals('hello'));
     });
 
     test('handles atomic number at root level', () async {
@@ -35,8 +35,11 @@ void main() {
       expect(expandPartialJson(schema, 'true'), equals(true));
       expect(expandPartialJson(schema, 'false'), equals(false));
 
-      // Partial booleans should fail
-      expect(() => expandPartialJson(schema, 'tr'), throwsFormatException);
+      // Partial booleans complete to the matching boolean
+      expect(expandPartialJson(schema, 'tr'), equals(true));
+      expect(expandPartialJson(schema, 'tru'), equals(true));
+      expect(expandPartialJson(schema, 'fa'), equals(false));
+      expect(expandPartialJson(schema, 'fals'), equals(false));
     });
 
     test('handles null at root level', () async {

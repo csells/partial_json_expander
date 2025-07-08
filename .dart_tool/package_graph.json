@@ -8,7 +8,8 @@
       "version": "0.1.0",
       "dependencies": [
         "json_schema",
-        "logging"
+        "logging",
+        "petitparser"
       ],
       "devDependencies": [
         "all_lint_rules_community",
@@ -60,6 +61,14 @@
       "name": "all_lint_rules_community",
       "version": "0.0.43",
       "dependencies": []
+    },
+    {
+      "name": "petitparser",
+      "version": "6.1.0",
+      "dependencies": [
+        "collection",
+        "meta"
+      ]
     },
     {
       "name": "logging",
@@ -350,6 +359,11 @@
       ]
     },
     {
+      "name": "meta",
+      "version": "1.17.0",
+      "dependencies": []
+    },
+    {
       "name": "uri",
       "version": "1.0.0",
       "dependencies": [
@@ -418,11 +432,6 @@
         "source_maps",
         "stack_trace"
       ]
-    },
-    {
-      "name": "meta",
-      "version": "1.17.0",
-      "dependencies": []
     },
     {
       "name": "glob",
