@@ -19,12 +19,12 @@ dynamic expandPartialJson(
   final completer = PartialJsonCompleter();
 
   final parseTree = parser.parse(partialJson, schema);
-  
+
   // If parsing failed and we have non-empty input, it's malformed
   if (parseTree == null && partialJson.trim().isNotEmpty) {
     return null;
   }
-  
+
   return completer.complete(parseTree, schema);
 }
 

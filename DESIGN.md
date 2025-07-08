@@ -2,46 +2,56 @@
 
 ## Overview
 
-The `partial_json_expander` package provides functionality to repair incomplete
-JSON strings and apply schema defaults, particularly useful for processing
-streaming LLM output where JSON responses arrive in chunks.
+The `partial_json_expander` package provides JSON completion functionality that transforms
+incomplete JSON strings into complete, schema-compliant objects. This is particularly 
+useful for processing streaming LLM output where JSON responses arrive in chunks.
+
+### Key Capabilities
+- **Smart Property Completion**: Completes partial property names like `{"temp` → `"temperature"`
+- **Schema-Driven Defaults**: Applies explicit or type-based defaults for all missing data
+- **Graceful Error Handling**: Returns null for malformed JSON that can't be completed
+- **Streaming-Ready**: Designed for progressive JSON building from chunks
 
 ## Core Components
 
 ### 1. `expandPartialJson()`
-The main entry point that orchestrates the JSON repair and default merging
+The main entry point that orchestrates the JSON parsing and default merging
 process.
 
 **Process:**
-1. Attempts to repair the partial JSON string
-2. If repair succeeds, parses the JSON
-3. Merges schema defaults into the parsed object
-4. Returns null if repair or parsing fails
+1. Creates a `PartialJsonParser` to parse the input with schema context
+2. If parsing succeeds, creates a `PartialJsonCompleter` to apply defaults
+3. Handles malformed JSON by returning null
+4. Returns completed JSON object with all defaults applied
 
-### 2. `_closePartialJson()`
-The JSON repair engine that handles various incomplete JSON scenarios.
+### 2. `PartialJsonParser` (New Architecture)
+A state machine-based parser that handles incomplete JSON directly during parsing.
 
-**Repair Strategies:**
-- **Trailing cleanup**: Removes trailing whitespace and commas
-- **Incomplete key completion**: Detects partial property keys and attempts to
-  complete them by matching against schema properties
-- **Missing values**: Adds `null` for properties ending with `:`
-- **String balancing**: Closes unclosed string literals
-- **Bracket/brace balancing**: Adds missing closing brackets and braces
+**Key Features:**
+- **Position tracking**: Maintains line/column information for better error reporting
+- **Parse tree creation**: Builds an AST with completion status for each node
+- **Schema-aware parsing**: Uses schema context during parsing for better completion
+- **Incomplete string detection**: Tracks whether property keys are incomplete
+- **Malformed JSON detection**: Identifies invalid structures like double commas
 
-**Failure cases:**
-- Ambiguous partial keys (multiple schema properties match)
-- More closing brackets/braces than opening ones
-- Malformed JSON that can't be repaired
+**Parse Node Types:**
+- `ObjectNode`: Objects with entries that may be incomplete
+- `ArrayNode`: Arrays with elements
+- `StringNode`: Strings that may be unclosed
+- `NumberNode`: Numbers that may be partial
+- `BoolNode`: Complete boolean values
+- `NullNode`: Null values
 
-### 3. `_mergeDefaults()`
-Recursively applies schema defaults to the parsed JSON object.
+### 3. `PartialJsonCompleter` (New Architecture)
+Completes the parse tree by applying schema defaults and handling incomplete nodes.
 
-**Features:**
-- Applies default values for missing properties
-- Creates empty objects/arrays for missing properties based on type
-- Recursively processes nested objects and arrays
-- Removes properties not defined in schema when `additionalProperties: false`
+**Completion Strategies:**
+- **Property name completion**: Single-char and meaningful prefixes for unique matches
+- **Schema-guided defaults**: Applies explicit defaults or type-based defaults intelligently
+- **Nested defaults**: Recursively creates objects with nested property defaults
+- **Required property handling**: Required properties get `null` instead of defaults when missing values
+- **Non-required property handling**: Gets explicit schema defaults or type defaults
+- **Null preservation**: Maintains null values when null is valid per schema type
 
 ### 4. `randomChunkedJson()`
 A utility function for testing that simulates streaming JSON by breaking a
@@ -121,26 +131,70 @@ The expanded test suite validates the library's robustness across all JSON types
 
 ## Implementation Details
 
-### Type Checking
-Uses `JsonSchema.typeList` to check for specific types, handling cases where a
-property can have multiple valid types:
+### State Machine Parser
+The new parser uses explicit state tracking instead of regex-based repair:
 ```dart
-propSchema.typeList?.any((t) => t == SchemaType.object)
+enum ParseState {
+  start, inObject, inObjectKey, inObjectColon, inObjectValue,
+  inObjectComma, inArray, inArrayValue, inArrayComma,
+  inString, inStringEscape, inNumber, inTrue, inFalse, inNull, complete
+}
 ```
 
-### Key Completion Algorithm
-1. Uses regex `[,{]\\s*\"([^\":]*)$` to find incomplete keys
-2. Filters schema properties that start with the partial key
-3. Only completes if there's exactly one match (unambiguous)
+### Property Completion Logic
+Enhanced completion handles multiple scenarios:
+```dart
+// Single-char completion (always allowed when unique)
+if (key.length == 1 && matches.length == 1) return matches.first;
 
-### Quote Balancing
-Counts total quotes and adds a closing quote if the count is odd, indicating
-we're in the middle of a string value.
+// Multi-char meaningful prefixes (4 chars max at start of object)  
+if (!isAfterOtherProperty && key.length <= 4 && matches.length == 1) 
+  return matches.first;
+
+// Fail for ambiguous or very long prefixes
+return null;
+```
+
+### Schema Resolution
+Supports advanced schema features:
+```dart
+JsonSchema _resolveSchema(JsonSchema schema, [JsonSchema? rootSchema]) {
+  // Handle $ref: '#' (recursive schemas)
+  // Handle allOf merging
+  // Handle anyOf/oneOf (basic support)
+}
+```
+
+### Default Value Application Logic
+The library applies defaults intelligently based on context:
+
+```dart
+// For properties with recognized names but missing values:
+if (entry.hasColon || (entry.isIncompleteStringKey && key != entry.key)) {
+  final isRequired = requiredProps.contains(key);
+  result[key] = _getDefaultForSchema(propSchema, useTypeDefaults: !isRequired);
+}
+
+// _getDefaultForSchema behavior:
+// 1. If schema has explicit default → use that
+// 2. If useTypeDefaults=true → use type default (empty string, 0, false, etc.)
+// 3. If useTypeDefaults=false → return null
+
+// Required properties: useTypeDefaults=false → get null if no explicit default
+// Non-required properties: useTypeDefaults=true → get explicit or type defaults
+```
+
+**Examples:**
+- `{"name":` where `name` required with default "John" → `"John"`
+- `{"name":` where `name` required, no default → `null`
+- `{"name":` where `name` optional, no default, type string → `""`
+- `{"temp` → `"temperature"` optional with default 20 → `20`
 
 ### Error Handling Strategy
-- **Graceful degradation**: Returns null instead of throwing exceptions
-- **Partial success**: Accepts incomplete JSON that can be reasonably repaired
-- **Statistical validation**: Ensures reasonable success rates across random inputs
+- **Parse-time validation**: Detects malformed JSON during parsing
+- **Graceful degradation**: Returns null for unrepairable structures
+- **Context preservation**: Maintains parse position for better error reporting
+- **Schema-guided recovery**: Uses schema to make intelligent completion decisions
 
 ### Edge Cases Handled
 - Empty input (throws FormatException)
@@ -186,7 +240,7 @@ The following examples show how various partial JSON fragments are processed and
 '{"name":"John",' → {"name": "John", "age": 0, "active": true}
 
 // Missing value after colon
-'{"name":' → {"name": null, "age": 0, "active": true}
+'{"name":' → {"name": "Unknown", "age": 0, "active": true}
 ```
 
 ### 2. Incomplete Property Names
@@ -452,25 +506,62 @@ The following examples show how various partial JSON fragments are processed and
 '{"value":nu' → null
 ```
 
-## Example Flow
+## How JSON Completion Works
 
-Given partial JSON: `{"time":"12:30","temp`
+The library performs JSON completion through a two-phase process that combines intelligent parsing with schema-guided completion:
 
-1. **Repair Phase**:
-   - Detects incomplete key "temp"
-   - Matches against schema properties
-   - Finds "temperature" as unique match
-   - Completes to: `{"time":"12:30","temperature":`
-   - Adds null value: `{"time":"12:30","temperature":null`
-   - Balances braces: `{"time":"12:30","temperature":null}`
+### Complete Example Flow
 
-2. **Parse Phase**:
-   - Successfully parses the repaired JSON
+Given partial JSON: `{"time":"12:30","temp` and this schema:
+```json
+{
+  "type": "object",
+  "properties": {
+    "time": {"type": "string"},
+    "temperature": {"type": "number", "default": 20},
+    "humidity": {"type": "number", "default": 50},
+    "units": {"type": "string", "default": "C"}
+  }
+}
+```
 
-3. **Merge Defaults Phase**:
-   - Applies schema default for "temperature" (0)
-   - Adds missing "units" property with default ("C")
-   - Returns: `{time: "12:30", temperature: 0, units: "C"}`
+**Phase 1: Intelligent Parsing**
+1. Parses `{"time":"12:30",` normally
+2. Encounters incomplete key `"temp`
+3. Matches against schema properties: `["temperature"]` (unique match)
+4. Creates ObjectEntry with `key="temp"`, `isIncompleteStringKey=true`
+5. Builds parse tree with completion metadata
+
+**Phase 2: Schema-Guided Completion**
+1. Processes existing property: `"time": "12:30"` (keep as-is)
+2. Handles incomplete key:
+   - `"temp"` → `"temperature"` (unique match completion)
+   - No value provided → apply schema default (20)
+3. Adds missing properties with defaults:
+   - `"humidity": 50` (missing property gets default)
+   - `"units": "C"` (missing property gets default)
+
+**Final Result:**
+```json
+{
+  "time": "12:30",
+  "temperature": 20,
+  "humidity": 50,
+  "units": "C"
+}
+```
+
+### Completion Decision Matrix
+
+| Input Pattern | Property Type | Has Default | Result |
+|---------------|---------------|-------------|---------|
+| `{"name":` | Required | ❌ | `"name": null` |
+| `{"name":` | Required | ✅ "John" | `"name": "John"` |
+| `{"name":` | Optional | ❌ | `"name": ""` (type default) |
+| `{"name":` | Optional | ✅ "John" | `"name": "John"` |
+| `{"temp` | Any | ✅ 20 | `"temperature": 20` |
+| Missing entirely | Optional | ✅ "John" | `"name": "John"` |
+| Missing entirely | Required | Any | ❌ (not added) |
 
 ## Design Decisions
 
@@ -493,13 +584,29 @@ The comprehensive test suite includes:
 - **Multiple random seeds**: Statistical validation of streaming scenarios
 - **Real-world examples**: Practical usage patterns
 
-## Future Enhancements
+## Current Status & Progress
 
-1. Support for more complex partial JSON scenarios (nested incomplete objects)
-2. Configurable repair strategies
-3. Better error reporting with specific failure reasons
-4. Performance optimizations for large schemas
-5. Support for JSON Schema draft versions beyond the current implementation
-6. Streaming parser optimization for very large JSON structures
-7. Advanced property name completion with fuzzy matching
-8. Support for custom default value generators
+### ✅ Completed (89/98 tests passing)
+- **Core parsing**: State machine-based parser with position tracking
+- **Property completion**: Single-char and meaningful prefix completion
+- **Schema features**: allOf merging, required properties, pattern properties
+- **Nested defaults**: Deep object creation with nested property defaults
+- **Error detection**: Malformed JSON detection (double commas, extra braces)
+- **Null handling**: Preserves null when valid per schema type
+
+### 🚧 In Progress (9 tests failing)
+- **Recursive schemas**: Basic $ref support implemented, edge cases remain
+- **Deep nesting**: Very large/deep structures may not parse correctly
+- **Property dependencies**: Schema dependencies partially implemented
+- **Edge case handling**: Some complex scenarios still need work
+
+### 🔄 Future Enhancements
+
+1. **Full $ref support**: Complex JSON Schema reference resolution
+2. **Property dependencies**: Complete implementation of schema dependencies
+3. **Performance optimization**: Better handling of very large schemas and content
+4. **Advanced completion**: Fuzzy matching and context-aware suggestions
+5. **Better error reporting**: Specific failure reasons with position information
+6. **Streaming optimization**: Better memory usage for very large JSON structures
+7. **Schema validation**: Full JSON Schema draft compliance
+8. **Custom generators**: User-defined default value generators
