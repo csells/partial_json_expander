@@ -28,7 +28,7 @@ void main() {
     test('handles bare arrays', () {
       final schema = JsonSchema.create({
         'type': 'array',
-        'items': {'type': 'string'}
+        'items': {'type': 'string'},
       });
 
       // Root-level arrays are valid JSON
@@ -43,8 +43,8 @@ void main() {
       final schema = JsonSchema.create({
         'type': 'object',
         'properties': {
-          'empty': {'type': 'string', 'default': ''}
-        }
+          'empty': {'type': 'string', 'default': ''},
+        },
       });
 
       expect(expandPartialJson(schema, '{}'), equals({'empty': ''}));
@@ -56,28 +56,36 @@ void main() {
         'type': 'object',
         'properties': {
           'maxInt': {'type': 'integer'},
-          'minInt': {'type': 'integer'}
-        }
+          'minInt': {'type': 'integer'},
+        },
       });
 
       // JavaScript safe integers
       const maxSafe = 9007199254740991;
       const minSafe = -9007199254740991;
 
-      expect(expandPartialJson(schema, '{"maxInt":$maxSafe,"minInt":$minSafe}'),
-          equals({'maxInt': maxSafe, 'minInt': minSafe}));
+      expect(
+        expandPartialJson(schema, '{"maxInt":$maxSafe,"minInt":$minSafe}'),
+        equals({'maxInt': maxSafe, 'minInt': minSafe}),
+      );
     });
 
     test('handles infinity and special float values', () {
-      final schema =
-          JsonSchema.create({'type': 'object', 'additionalProperties': true});
+      final schema = JsonSchema.create({
+        'type': 'object',
+        'additionalProperties': true,
+      });
 
       // JSON doesn't support Infinity, but test edge cases
-      expect(expandPartialJson(schema, '{"veryLarge":1e308}'),
-          equals({'veryLarge': 1e308}));
+      expect(
+        expandPartialJson(schema, '{"veryLarge":1e308}'),
+        equals({'veryLarge': 1e308}),
+      );
 
-      expect(expandPartialJson(schema, '{"verySmall":1e-308}'),
-          equals({'verySmall': 1e-308}));
+      expect(
+        expandPartialJson(schema, '{"verySmall":1e-308}'),
+        equals({'verySmall': 1e-308}),
+      );
     });
   });
 
@@ -98,35 +106,36 @@ void main() {
                     'properties': {
                       'items': {
                         'type': 'array',
-                        'items': {'type': 'number'}
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
+                        'items': {'type': 'number'},
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
       });
 
       const json = '{"data":[{"values":[{"items":[1,2,3]},{"items":[4,5';
       final result = expandPartialJson(schema, json);
       expect(
-          result,
-          equals({
-            'data': [
-              {
-                'values': [
-                  {
-                    'items': [1, 2, 3]
-                  },
-                  {
-                    'items': [4, 5]
-                  }
-                ]
-              }
-            ]
-          }));
+        result,
+        equals({
+          'data': [
+            {
+              'values': [
+                {
+                  'items': [1, 2, 3],
+                },
+                {
+                  'items': [4, 5],
+                },
+              ],
+            },
+          ],
+        }),
+      );
     });
 
     test('handles circular-like structures with refs', () {
@@ -145,14 +154,14 @@ void main() {
                   'next': {
                     'type': 'object',
                     'properties': {
-                      'value': {'type': 'string'}
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
+                      'value': {'type': 'string'},
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
       });
 
       const json = '{"node":{"value":"a","next":{"value":"b","next":{"val';
@@ -165,37 +174,53 @@ void main() {
 
   group('Character Encoding Edge Cases', () {
     test('handles various UTF-8 sequences', () {
-      final schema =
-          JsonSchema.create({'type': 'object', 'additionalProperties': true});
+      final schema = JsonSchema.create({
+        'type': 'object',
+        'additionalProperties': true,
+      });
 
       // 2-byte UTF-8
-      expect(expandPartialJson(schema, '{"text":"café"}'),
-          equals({'text': 'café'}));
+      expect(
+        expandPartialJson(schema, '{"text":"café"}'),
+        equals({'text': 'café'}),
+      );
 
       // 3-byte UTF-8
       expect(
-          expandPartialJson(schema, '{"text":"你好"}'), equals({'text': '你好'}));
+        expandPartialJson(schema, '{"text":"你好"}'),
+        equals({'text': '你好'}),
+      );
 
       // 4-byte UTF-8 (emoji)
       expect(
-          expandPartialJson(schema, '{"text":"🎉"}'), equals({'text': '🎉'}));
+        expandPartialJson(schema, '{"text":"🎉"}'),
+        equals({'text': '🎉'}),
+      );
 
       // Mixed
-      expect(expandPartialJson(schema, '{"text":"Hello café 你好 🎉"}'),
-          equals({'text': 'Hello café 你好 🎉'}));
+      expect(
+        expandPartialJson(schema, '{"text":"Hello café 你好 🎉"}'),
+        equals({'text': 'Hello café 你好 🎉'}),
+      );
     });
 
     test('handles control characters', () {
-      final schema =
-          JsonSchema.create({'type': 'object', 'additionalProperties': true});
+      final schema = JsonSchema.create({
+        'type': 'object',
+        'additionalProperties': true,
+      });
 
       // Various control characters (escaped)
-      expect(expandPartialJson(schema, r'{"text":"\b\f\n\r\t"}'),
-          equals({'text': '\b\f\n\r\t'}));
+      expect(
+        expandPartialJson(schema, r'{"text":"\b\f\n\r\t"}'),
+        equals({'text': '\b\f\n\r\t'}),
+      );
 
       // Partial escape sequence
-      expect(expandPartialJson(schema, r'{"text":"hello\n'),
-          equals({'text': 'hello\n'}));
+      expect(
+        expandPartialJson(schema, r'{"text":"hello\n'),
+        equals({'text': 'hello\n'}),
+      );
     });
   });
 
@@ -209,27 +234,29 @@ void main() {
           'lastName': {'type': 'string', 'default': 'Doe'},
           'fullName': {
             'type': 'string',
-            'default': 'John Doe' // Conceptually derived from other defaults
-          }
-        }
+            'default': 'John Doe', // Conceptually derived from other defaults
+          },
+        },
       });
 
       expect(
-          expandPartialJson(schema, '{}'),
-          equals({
-            'firstName': 'John',
-            'lastName': 'Doe',
-            'fullName': 'John Doe'
-          }));
+        expandPartialJson(schema, '{}'),
+        equals({
+          'firstName': 'John',
+          'lastName': 'Doe',
+          'fullName': 'John Doe',
+        }),
+      );
 
       // Override one part
       expect(
-          expandPartialJson(schema, '{"firstName":"Jane"}'),
-          equals({
-            'firstName': 'Jane',
-            'lastName': 'Doe',
-            'fullName': 'John Doe' // Default doesn't update
-          }));
+        expandPartialJson(schema, '{"firstName":"Jane"}'),
+        equals({
+          'firstName': 'Jane',
+          'lastName': 'Doe',
+          'fullName': 'John Doe', // Default doesn't update
+        }),
+      );
     });
 
     test('handles defaults with special JSON values', () {
@@ -239,18 +266,19 @@ void main() {
           'nullDefault': {'default': null},
           'boolDefault': {'type': 'boolean', 'default': false},
           'emptyArrayDefault': {'type': 'array', 'default': []},
-          'emptyObjectDefault': {'type': 'object', 'default': {}}
-        }
+          'emptyObjectDefault': {'type': 'object', 'default': {}},
+        },
       });
 
       expect(
-          expandPartialJson(schema, '{}'),
-          equals({
-            'nullDefault': null,
-            'boolDefault': false,
-            'emptyArrayDefault': [],
-            'emptyObjectDefault': {}
-          }));
+        expandPartialJson(schema, '{}'),
+        equals({
+          'nullDefault': null,
+          'boolDefault': false,
+          'emptyArrayDefault': [],
+          'emptyObjectDefault': {},
+        }),
+      );
     });
   });
 
@@ -262,8 +290,10 @@ void main() {
         properties['prop$i'] = {'type': 'string', 'default': 'value$i'};
       }
 
-      final schema =
-          JsonSchema.create({'type': 'object', 'properties': properties});
+      final schema = JsonSchema.create({
+        'type': 'object',
+        'properties': properties,
+      });
 
       final result = expandPartialJson(schema, '{}');
       expect(result!.length, equals(100));
@@ -277,9 +307,9 @@ void main() {
         'properties': {
           'bigArray': {
             'type': 'array',
-            'items': {'type': 'integer'}
-          }
-        }
+            'items': {'type': 'integer'},
+          },
+        },
       });
 
       // Build array with 1000 items
@@ -298,23 +328,28 @@ void main() {
         'properties': {
           'firstName': {'type': 'string'},
           'lastName': {'type': 'string'},
-          'middleName': {'type': 'string'}
-        }
+          'middleName': {'type': 'string'},
+        },
       });
 
-      // Start of object
-      expect(expandPartialJson(schema, '{"fir'), isNull);
+      // Start of object - completes unique prefix
+      expect(expandPartialJson(schema, '{"fir'), equals({'firstName': ''}));
 
-      // After another property
-      expect(expandPartialJson(schema, '{"firstName":"John","la'), isNull);
+      // After another property - "la" completes to "lastName"
+      expect(
+        expandPartialJson(schema, '{"firstName":"John","la'),
+        equals({'firstName': 'John', 'lastName': ''}),
+      );
 
       // Ambiguous prefix (matches firstName)
       expect(expandPartialJson(schema, '{"f'), isNotNull);
     });
 
     test('handles partial values of different types', () {
-      final schema =
-          JsonSchema.create({'type': 'object', 'additionalProperties': true});
+      final schema = JsonSchema.create({
+        'type': 'object',
+        'additionalProperties': true,
+      });
 
       // Partial string
       expect(expandPartialJson(schema, '{"s":"par'), equals({'s': 'par'}));
@@ -322,18 +357,19 @@ void main() {
       // Partial number
       expect(expandPartialJson(schema, '{"n":123.'), equals({'n': 123}));
 
-      // Partial boolean (should fail)
-      expect(expandPartialJson(schema, '{"b":tr'), isNull);
+      // Partial boolean completes to true
+      expect(expandPartialJson(schema, '{"b":tr'), equals({'b': true}));
 
-      // Partial null (should fail)
-      expect(expandPartialJson(schema, '{"x":nu'), isNull);
+      // Partial null completes to null
+      expect(expandPartialJson(schema, '{"x":nu'), equals({'x': null}));
 
       // Partial array
       expect(
-          expandPartialJson(schema, '{"a":[1,2,'),
-          equals({
-            'a': [1, 2]
-          }));
+        expandPartialJson(schema, '{"a":[1,2,'),
+        equals({
+          'a': [1, 2],
+        }),
+      );
     });
   });
 
@@ -343,22 +379,30 @@ void main() {
         'type': 'object',
         'properties': {
           'flexible': {
-            'type': ['string', 'number', 'boolean', 'null']
-          }
-        }
+            'type': ['string', 'number', 'boolean', 'null'],
+          },
+        },
       });
 
-      expect(expandPartialJson(schema, '{"flexible":"text"}'),
-          equals({'flexible': 'text'}));
+      expect(
+        expandPartialJson(schema, '{"flexible":"text"}'),
+        equals({'flexible': 'text'}),
+      );
 
-      expect(expandPartialJson(schema, '{"flexible":123}'),
-          equals({'flexible': 123}));
+      expect(
+        expandPartialJson(schema, '{"flexible":123}'),
+        equals({'flexible': 123}),
+      );
 
-      expect(expandPartialJson(schema, '{"flexible":true}'),
-          equals({'flexible': true}));
+      expect(
+        expandPartialJson(schema, '{"flexible":true}'),
+        equals({'flexible': true}),
+      );
 
-      expect(expandPartialJson(schema, '{"flexible":null}'),
-          equals({'flexible': null}));
+      expect(
+        expandPartialJson(schema, '{"flexible":null}'),
+        equals({'flexible': null}),
+      );
     });
   });
 
@@ -379,26 +423,26 @@ void main() {
                   'properties': {
                     'id': {'type': 'string'},
                     'name': {'type': 'string'},
-                    'metadata': {'type': 'object', 'default': {}}
-                  }
-                }
+                    'metadata': {'type': 'object', 'default': {}},
+                  },
+                },
               },
               'pagination': {
                 'type': 'object',
                 'properties': {
                   'page': {'type': 'integer', 'default': 1},
                   'limit': {'type': 'integer', 'default': 20},
-                  'total': {'type': 'integer', 'default': 0}
-                }
-              }
-            }
+                  'total': {'type': 'integer', 'default': 0},
+                },
+              },
+            },
           },
           'errors': {
             'type': 'array',
             'default': [],
-            'items': {'type': 'string'}
-          }
-        }
+            'items': {'type': 'string'},
+          },
+        },
       });
 
       // Partial API response
@@ -411,7 +455,10 @@ void main() {
       final data = result['data'] as Map<String, dynamic>;
       final items = data['items'] as List;
       expect(items.length, equals(1));
+      expect(items[0], isNotNull);
       expect((items[0] as Map)['id'], equals('123'));
+      // "na" should complete to "name"
+      expect((items[0] as Map).containsKey('name'), isTrue);
     });
 
     test('handles configuration file structure', () {
@@ -422,7 +469,7 @@ void main() {
           'environment': {
             'type': 'string',
             'enum': ['development', 'staging', 'production'],
-            'default': 'development'
+            'default': 'development',
           },
           'database': {
             'type': 'object',
@@ -430,15 +477,15 @@ void main() {
               'host': {'type': 'string', 'default': 'localhost'},
               'port': {'type': 'integer', 'default': 5432},
               'name': {'type': 'string', 'default': 'myapp'},
-              'ssl': {'type': 'boolean', 'default': false}
-            }
+              'ssl': {'type': 'boolean', 'default': false},
+            },
           },
           'features': {
             'type': 'object',
             'additionalProperties': {'type': 'boolean'},
-            'default': {'auth': true, 'analytics': false, 'beta': false}
-          }
-        }
+            'default': {'auth': true, 'analytics': false, 'beta': false},
+          },
+        },
       });
 
       // Partial config
@@ -451,10 +498,13 @@ void main() {
       expect(result['environment'], equals('production'));
       final db = result['database'] as Map<String, dynamic>;
       expect(db['host'], equals('db.example.com'));
-      expect(db['port'], isNull); // Partial number
+      // Gets default for missing value after colon
+      expect(db['port'], equals(5432));
       expect(db['name'], equals('myapp')); // Default
-      expect(result['features'],
-          equals({'auth': true, 'analytics': false, 'beta': false}));
+      expect(
+        result['features'],
+        equals({'auth': true, 'analytics': false, 'beta': false}),
+      );
     });
   });
 }

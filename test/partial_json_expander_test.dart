@@ -29,22 +29,26 @@ void main() {
     });
 
     test('repairs nested objects', () {
-      final result =
-          expandPartialJson(basicSchema, '{"user":{"name":"John","age":30');
+      final result = expandPartialJson(
+        basicSchema,
+        '{"user":{"name":"John","age":30',
+      );
       expect(
-          result,
-          equals({
-            'user': {'name': 'John', 'age': 30}
-          }));
+        result,
+        equals({
+          'user': {'name': 'John', 'age': 30},
+        }),
+      );
     });
 
     test('repairs arrays', () {
       final result = expandPartialJson(basicSchema, '{"items":[1,2,3');
       expect(
-          result,
-          equals({
-            'items': [1, 2, 3]
-          }));
+        result,
+        equals({
+          'items': [1, 2, 3],
+        }),
+      );
     });
 
     test('handles trailing commas', () {
@@ -72,10 +76,11 @@ void main() {
     test('handles simple incomplete array', () {
       final result = expandPartialJson(basicSchema, '{"arr":[1,2');
       expect(
-          result,
-          equals({
-            'arr': [1, 2]
-          }));
+        result,
+        equals({
+          'arr': [1, 2],
+        }),
+      );
     });
 
     test('repairs missing braces', () {
@@ -90,8 +95,8 @@ void main() {
         'type': 'object',
         'properties': {
           'name': {'type': 'string', 'default': 'Unknown'},
-          'age': {'type': 'integer', 'default': 0}
-        }
+          'age': {'type': 'integer', 'default': 0},
+        },
       });
 
       final result = expandPartialJson(schema, '{}');
@@ -103,8 +108,8 @@ void main() {
         'type': 'object',
         'properties': {
           'name': {'type': 'string', 'default': 'Unknown'},
-          'age': {'type': 'integer', 'default': 0}
-        }
+          'age': {'type': 'integer', 'default': 0},
+        },
       });
 
       final result = expandPartialJson(schema, '{"name":"John"}');
@@ -120,18 +125,19 @@ void main() {
             'default': {'name': 'Guest', 'role': 'visitor'},
             'properties': {
               'name': {'type': 'string'},
-              'role': {'type': 'string'}
-            }
-          }
-        }
+              'role': {'type': 'string'},
+            },
+          },
+        },
       });
 
       final result = expandPartialJson(schema, '{}');
       expect(
-          result,
-          equals({
-            'user': {'name': 'Guest', 'role': 'visitor'}
-          }));
+        result,
+        equals({
+          'user': {'name': 'Guest', 'role': 'visitor'},
+        }),
+      );
     });
 
     test('merges partial nested objects with defaults', () {
@@ -142,18 +148,19 @@ void main() {
             'type': 'object',
             'properties': {
               'theme': {'type': 'string', 'default': 'light'},
-              'fontSize': {'type': 'integer', 'default': 12}
-            }
-          }
-        }
+              'fontSize': {'type': 'integer', 'default': 12},
+            },
+          },
+        },
       });
 
       final result = expandPartialJson(schema, '{"settings":{"theme":"dark"}}');
       expect(
-          result,
-          equals({
-            'settings': {'theme': 'dark', 'fontSize': 12}
-          }));
+        result,
+        equals({
+          'settings': {'theme': 'dark', 'fontSize': 12},
+        }),
+      );
     });
 
     test('applies array defaults', () {
@@ -163,17 +170,18 @@ void main() {
           'tags': {
             'type': 'array',
             'default': ['general'],
-            'items': {'type': 'string'}
-          }
-        }
+            'items': {'type': 'string'},
+          },
+        },
       });
 
       final result = expandPartialJson(schema, '{}');
       expect(
-          result,
-          equals({
-            'tags': ['general']
-          }));
+        result,
+        equals({
+          'tags': ['general'],
+        }),
+      );
     });
 
     test('removes properties when additionalProperties is false', () {
@@ -181,12 +189,14 @@ void main() {
         'type': 'object',
         'additionalProperties': false,
         'properties': {
-          'allowed': {'type': 'string'}
-        }
+          'allowed': {'type': 'string'},
+        },
       });
 
-      final result =
-          expandPartialJson(schema, '{"allowed":"yes","notAllowed":"no"}');
+      final result = expandPartialJson(
+        schema,
+        '{"allowed":"yes","notAllowed":"no"}',
+      );
       expect(result, equals({'allowed': 'yes'}));
     });
 
@@ -195,8 +205,8 @@ void main() {
         'type': 'object',
         'properties': {
           'temperature': {'type': 'number', 'default': 20},
-          'humidity': {'type': 'number', 'default': 50}
-        }
+          'humidity': {'type': 'number', 'default': 50},
+        },
       });
 
       final result = expandPartialJson(schema, '{"temp');
@@ -207,12 +217,13 @@ void main() {
   group('randomChunkedJson', () {
     test('produces valid JSON chunks', () async {
       const json = '{"name":"John","age":30,"city":"NYC"}';
-      final chunks = await randomChunkedJson(
-        json,
-        seed: 42,
-        minChunk: 5,
-        maxChunk: 10,
-      ).toList();
+      final chunks =
+          await randomChunkedJson(
+            json,
+            seed: 42,
+            minChunk: 5,
+            maxChunk: 10,
+          ).toList();
 
       final reconstructed = chunks.join();
       expect(reconstructed, equals(json));
@@ -220,12 +231,13 @@ void main() {
 
     test('respects chunk size constraints', () async {
       const json = '{"name":"John","age":30}';
-      final chunks = await randomChunkedJson(
-        json,
-        seed: 42,
-        minChunk: 3,
-        maxChunk: 5,
-      ).toList();
+      final chunks =
+          await randomChunkedJson(
+            json,
+            seed: 42,
+            minChunk: 3,
+            maxChunk: 5,
+          ).toList();
 
       // All chunks except possibly the last should respect size constraints
       for (var i = 0; i < chunks.length; i++) {
@@ -244,12 +256,13 @@ void main() {
 
     test('handles single chunk when json is small', () async {
       const json = '{"a":1}';
-      final chunks = await randomChunkedJson(
-        json,
-        seed: 42,
-        minChunk: 10,
-        maxChunk: 20,
-      ).toList();
+      final chunks =
+          await randomChunkedJson(
+            json,
+            seed: 42,
+            minChunk: 10,
+            maxChunk: 20,
+          ).toList();
 
       expect(chunks.length, equals(1));
       expect(chunks.first, equals(json));
@@ -258,18 +271,20 @@ void main() {
     test('generates consistent output with seed', () async {
       const json = '{"name":"John","age":30,"city":"NYC"}';
 
-      final chunks1 = await randomChunkedJson(
-        json,
-        seed: 42,
-        minChunk: 3,
-        maxChunk: 8,
-      ).toList();
-      final chunks2 = await randomChunkedJson(
-        json,
-        seed: 42,
-        minChunk: 3,
-        maxChunk: 8,
-      ).toList();
+      final chunks1 =
+          await randomChunkedJson(
+            json,
+            seed: 42,
+            minChunk: 3,
+            maxChunk: 8,
+          ).toList();
+      final chunks2 =
+          await randomChunkedJson(
+            json,
+            seed: 42,
+            minChunk: 3,
+            maxChunk: 8,
+          ).toList();
 
       expect(chunks1, equals(chunks2));
     });
@@ -277,18 +292,20 @@ void main() {
     test('generates different output with different seeds', () async {
       const json = '{"name":"John","age":30,"city":"NYC"}';
 
-      final chunks1 = await randomChunkedJson(
-        json,
-        seed: 42,
-        minChunk: 3,
-        maxChunk: 8,
-      ).toList();
-      final chunks2 = await randomChunkedJson(
-        json,
-        seed: 123,
-        minChunk: 3,
-        maxChunk: 8,
-      ).toList();
+      final chunks1 =
+          await randomChunkedJson(
+            json,
+            seed: 42,
+            minChunk: 3,
+            maxChunk: 8,
+          ).toList();
+      final chunks2 =
+          await randomChunkedJson(
+            json,
+            seed: 123,
+            minChunk: 3,
+            maxChunk: 8,
+          ).toList();
 
       // With different seeds, chunks should be different
       expect(chunks1, isNot(equals(chunks2)));
@@ -331,7 +348,7 @@ void main() {
               'score': {'type': 'number'},
               'tags': {
                 'type': 'array',
-                'items': {'type': 'string'}
+                'items': {'type': 'string'},
               },
               'address': {
                 'type': 'object',
@@ -342,10 +359,10 @@ void main() {
                     'type': 'object',
                     'properties': {
                       'lat': {'type': 'number'},
-                      'lng': {'type': 'number'}
-                    }
-                  }
-                }
+                      'lng': {'type': 'number'},
+                    },
+                  },
+                },
               },
               'projects': {
                 'type': 'array',
@@ -354,13 +371,13 @@ void main() {
                   'properties': {
                     'id': {'type': 'integer'},
                     'name': {'type': 'string'},
-                    'status': {'type': 'string'}
-                  }
-                }
-              }
-            }
-          }
-        }
+                    'status': {'type': 'string'},
+                  },
+                },
+              },
+            },
+          },
+        },
       });
 
       // Test with many different seeds to ensure breaks at various positions
@@ -370,12 +387,13 @@ void main() {
       var totalAttempts = 0;
 
       for (final seed in seeds) {
-        final chunks = await randomChunkedJson(
-          complexJson,
-          seed: seed,
-          minChunk: 1,
-          maxChunk: 10,
-        ).toList();
+        final chunks =
+            await randomChunkedJson(
+              complexJson,
+              seed: seed,
+              minChunk: 1,
+              maxChunk: 10,
+            ).toList();
 
         // Reconstruct progressively and ensure each partial is valid
         final buffer = StringBuffer();
@@ -397,7 +415,9 @@ void main() {
               expect(user['name'], equals('John Doe'));
               expect(user['age'], equals(30));
               expect(
-                  user['tags'], equals(['developer', 'team-lead', 'mentor']));
+                user['tags'],
+                equals(['developer', 'team-lead', 'mentor']),
+              );
               expect((user['projects'] as List).length, equals(2));
             }
           }
@@ -406,8 +426,11 @@ void main() {
 
       // Should have a reasonable success rate
       final successRate = successfulParses / totalAttempts;
-      expect(successRate, greaterThan(0.1),
-          reason: 'Success rate too low: $successRate');
+      expect(
+        successRate,
+        greaterThan(0.1),
+        reason: 'Success rate too low: $successRate',
+      );
     });
 
     test('stress test with extreme chunking', () async {
@@ -415,19 +438,22 @@ void main() {
       const json = '{"a":{"b":[1,2,{"c":"d"}],"e":null,"f":true}}';
 
       // Test single-character chunks (most extreme case)
-      final chunks = await randomChunkedJson(
-        json,
-        seed: 999,
-        minChunk: 1,
-        maxChunk: 1,
-      ).toList();
+      final chunks =
+          await randomChunkedJson(
+            json,
+            seed: 999,
+            minChunk: 1,
+            maxChunk: 1,
+          ).toList();
 
       expect(chunks.join(), equals(json));
       expect(chunks.length, equals(json.length));
 
       // Test progressive expansion
-      final schema =
-          JsonSchema.create({'type': 'object', 'additionalProperties': true});
+      final schema = JsonSchema.create({
+        'type': 'object',
+        'additionalProperties': true,
+      });
 
       final buffer = StringBuffer();
       var successfulExpansions = 0;
@@ -456,8 +482,10 @@ void main() {
         ('{"a":{"b":{"c":1}}}', [6, 10, 14]), // Nested objects
       ];
 
-      final schema =
-          JsonSchema.create({'type': 'object', 'additionalProperties': true});
+      final schema = JsonSchema.create({
+        'type': 'object',
+        'additionalProperties': true,
+      });
 
       for (final testCase in testCases) {
         final (json, breakPositions) = testCase;
@@ -472,9 +500,13 @@ void main() {
 
             // Test accumulated (should always work)
             final result2 = expandPartialJson(schema, part1 + part2);
-            expect(result2, isNotNull,
-                reason: 'Failed to parse complete JSON broken at '
-                    'position $breakPos in "$json"');
+            expect(
+              result2,
+              isNotNull,
+              reason:
+                  'Failed to parse complete JSON broken at '
+                  'position $breakPos in "$json"',
+            );
           }
         }
       }
@@ -501,30 +533,31 @@ void main() {
             'type': 'object',
             'properties': {
               'language': {'type': 'string'},
-              'content': {'type': 'string'}
-            }
+              'content': {'type': 'string'},
+            },
           },
           'explanation': {'type': 'string'},
           'complexity': {
             'type': 'object',
             'properties': {
               'time': {'type': 'string'},
-              'space': {'type': 'string'}
-            }
-          }
-        }
+              'space': {'type': 'string'},
+            },
+          },
+        },
       });
 
       // Simulate realistic streaming chunks
       final seeds = [42, 99, 156, 234, 500, 777, 1234];
 
       for (final seed in seeds) {
-        final chunks = await randomChunkedJson(
-          llmResponse,
-          seed: seed,
-          minChunk: 5,
-          maxChunk: 25, // Realistic chunk sizes
-        ).toList();
+        final chunks =
+            await randomChunkedJson(
+              llmResponse,
+              seed: seed,
+              minChunk: 5,
+              maxChunk: 25, // Realistic chunk sizes
+            ).toList();
 
         final buffer = StringBuffer();
         Map<String, dynamic>? lastValidResult;
@@ -562,35 +595,46 @@ void main() {
     });
 
     test('handles deeply nested structures', () {
-      final result =
-          expandPartialJson(edgeSchema, '{"a":{"b":{"c":{"d":"value');
+      final result = expandPartialJson(
+        edgeSchema,
+        '{"a":{"b":{"c":{"d":"value',
+      );
       expect(
-          result,
-          equals({
-            'a': {
-              'b': {
-                'c': {'d': 'value'}
-              }
-            }
-          }));
+        result,
+        equals({
+          'a': {
+            'b': {
+              'c': {'d': 'value'},
+            },
+          },
+        }),
+      );
     });
 
     test('handles escaped quotes in strings', () {
-      final result =
-          expandPartialJson(edgeSchema, r'{"message":"Hello \"World\"');
+      final result = expandPartialJson(
+        edgeSchema,
+        r'{"message":"Hello \"World\"',
+      );
       expect(result, equals({'message': 'Hello "World"'}));
     });
 
     test('handles numbers in various formats', () {
       final result = expandPartialJson(
-          edgeSchema, '{"int":42,"float":3.14,"exp":1e5,"neg":-10');
-      expect(result,
-          equals({'int': 42, 'float': 3.14, 'exp': 100000, 'neg': -10}));
+        edgeSchema,
+        '{"int":42,"float":3.14,"exp":1e5,"neg":-10',
+      );
+      expect(
+        result,
+        equals({'int': 42, 'float': 3.14, 'exp': 100000, 'neg': -10}),
+      );
     });
 
     test('handles Unicode characters', () {
-      final result =
-          expandPartialJson(edgeSchema, '{"emoji":"👍","chinese":"你好"');
+      final result = expandPartialJson(
+        edgeSchema,
+        '{"emoji":"👍","chinese":"你好"',
+      );
       expect(result, equals({'emoji': '👍', 'chinese': '你好'}));
     });
 
@@ -601,15 +645,15 @@ void main() {
           'email': {
             'type': 'string',
             'format': 'email',
-            'default': 'user@example.com'
+            'default': 'user@example.com',
           },
           'score': {
             'type': 'number',
             'minimum': 0,
             'maximum': 100,
-            'default': 50
-          }
-        }
+            'default': 50,
+          },
+        },
       });
 
       final result = expandPartialJson(schema, '{"score":75');
@@ -624,19 +668,21 @@ void main() {
     test('handles array with missing closing bracket', () {
       final result = expandPartialJson(edgeSchema, '{"arr":[1,2,3');
       expect(
-          result,
-          equals({
-            'arr': [1, 2, 3]
-          }));
+        result,
+        equals({
+          'arr': [1, 2, 3],
+        }),
+      );
     });
 
     test('handles nested objects with missing braces', () {
       final result = expandPartialJson(edgeSchema, '{"a":{"b":1');
       expect(
-          result,
-          equals({
-            'a': {'b': 1}
-          }));
+        result,
+        equals({
+          'a': {'b': 1},
+        }),
+      );
     });
   });
 }

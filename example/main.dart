@@ -32,8 +32,10 @@ void main() async {
     'default': [1, 2, 3],
   });
 
-  print("expandPartialJson('[1,2,') => "
-      "${expandPartialJson(arraySchema, '[1,2,')}");
+  print(
+    "expandPartialJson('[1,2,') => "
+    "${expandPartialJson(arraySchema, '[1,2,')}",
+  );
   print("expandPartialJson('') => ${expandPartialJson(arraySchema, '')}");
 
   print('\nExample 3: Partial primitive completion');
@@ -43,12 +45,18 @@ void main() async {
 
   print("expandPartialJson('tr') => ${expandPartialJson(boolSchema, 'tr')}");
   print("expandPartialJson('fal') => ${expandPartialJson(boolSchema, 'fal')}");
-  print("expandPartialJson('\"hello') => "
-      "${expandPartialJson(stringSchema, '"hello')}");
-  print("expandPartialJson('123.') => "
-      "${expandPartialJson(numberSchema, '123.')}");
-  print("expandPartialJson('1e5') => "
-      "${expandPartialJson(numberSchema, '1e5')}");
+  print(
+    "expandPartialJson('\"hello') => "
+    "${expandPartialJson(stringSchema, '"hello')}",
+  );
+  print(
+    "expandPartialJson('123.') => "
+    "${expandPartialJson(numberSchema, '123.')}",
+  );
+  print(
+    "expandPartialJson('1e5') => "
+    "${expandPartialJson(numberSchema, '1e5')}",
+  );
 
   print('\nExample 4: Complex nested structure with defaults');
   final complexSchema = JsonSchema.create({
@@ -86,10 +94,16 @@ void main() async {
   print('Result: ${expandPartialJson(complexSchema, partialComplex)}');
 
   print('\nExample 5: Empty input handling');
-  print('Empty string with object schema: '
-      '${expandPartialJson(objectSchema, '')}');
-  print('Empty string with array schema: '
-      '${expandPartialJson(arraySchema, '')}');
-  print('Empty string with string schema: '
-      '${expandPartialJson(stringSchema, '')}');
+  print(
+    'Empty string with object schema: '
+    '${expandPartialJson(objectSchema, '')}',
+  );
+  print(
+    'Empty string with array schema: '
+    '${expandPartialJson(arraySchema, '')}',
+  );
+  print(
+    'Empty string with string schema: '
+    '${expandPartialJson(stringSchema, '')}',
+  );
 }

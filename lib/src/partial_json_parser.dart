@@ -251,9 +251,10 @@ class PartialJsonParser {
       // Parse value
       ParseNode? value;
       if (hasColon && !ctx.isEof && ctx.current != ',' && ctx.current != '}') {
-        final propSchema = key != null && schema.properties.containsKey(key)
-            ? schema.properties[key]!
-            : JsonSchema.create({});
+        final propSchema =
+            key != null && schema.properties.containsKey(key)
+                ? schema.properties[key]!
+                : JsonSchema.create({});
         value = _parseValue(ctx, propSchema);
       }
 
@@ -582,9 +583,10 @@ JsonSchema _mergeSchemas(List<dynamic> schemaDefinitions) {
   if (schemaDefinitions.isEmpty) return JsonSchema.create({});
 
   // Convert schema definitions to JsonSchema objects
-  final schemas = schemaDefinitions
-      .map((def) => def is JsonSchema ? def : JsonSchema.create(def))
-      .toList();
+  final schemas =
+      schemaDefinitions
+          .map((def) => def is JsonSchema ? def : JsonSchema.create(def))
+          .toList();
 
   if (schemas.length == 1) return schemas.first;
 
@@ -679,8 +681,11 @@ class PartialJsonCompleter {
     return false;
   }
 
-  dynamic complete(ParseNode? node, JsonSchema schema,
-      [JsonSchema? rootSchema]) {
+  dynamic complete(
+    ParseNode? node,
+    JsonSchema schema, [
+    JsonSchema? rootSchema,
+  ]) {
     rootSchema ??= schema;
     // Resolve any allOf/anyOf/oneOf/$ref before processing
     final resolvedSchema = _resolveSchema(schema, rootSchema);
@@ -702,42 +707,20 @@ class PartialJsonCompleter {
         if (entry.isIncompleteStringKey && entry.key != null) {
           final key = entry.key!;
           // Check if the incomplete key uniquely matches a property
-          final matches = resolvedSchema.properties.keys
-              .where((prop) => prop.startsWith(key))
-              .toList();
+          final matches =
+              resolvedSchema.properties.keys
+                  .where((prop) => prop.startsWith(key))
+                  .toList();
           if (matches.length != 1) {
             // No unique match - fail the parse
             return null;
           }
 
-          // Special handling for different test cases:
-          // - Single char keys at start: complete (e.g., {"f)
-          // - Multi-char keys at start that match common prefixes:
-          //   complete (e.g., {"temp)
-          // - Keys after other properties: only complete if single char
-          // - Other multi-char keys: fail
+          // If we have a unique match, we'll complete it regardless of length
+          // This allows natural completion like {"tempera -> "temperature"
 
-          // Check if this is after another property
-          final isAfterOtherProperty = node.entries.any((e) =>
-              e != entry && e.key != null && (e.value != null || e.hasColon));
-
-          if (isAfterOtherProperty && key.length > 1) {
-            // Multi-char incomplete key after other properties
-            return null;
-          }
-
-          // For keys at the start, be selective
-          // Allow very short keys (1 char) or common meaningful prefixes
-          if (!isAfterOtherProperty && key.length > 2) {
-            // Check if this looks like a meaningful prefix
-            // Common prefixes that should complete:
-            // temp, tmp, conf, config, etc.
-            final looksLikeMeaningfulPrefix =
-                key.length == 4 && matches.first.startsWith(key);
-            if (!looksLikeMeaningfulPrefix) {
-              return null;
-            }
-          }
+          // No length restrictions - if we have a unique match, use it!
+          // The uniqueness check above (matches.length != 1) is sufficient
         }
       }
 
@@ -745,10 +728,12 @@ class PartialJsonCompleter {
       // If the object has no valid entries, return null
       if (completed.isEmpty && node.entries.isNotEmpty) {
         // Check if any entry has a recognized key
-        final hasRecognizedKeys = node.entries.any((entry) =>
-            entry.key != null &&
-            (resolvedSchema.properties.containsKey(entry.key) ||
-                entry.hasColon));
+        final hasRecognizedKeys = node.entries.any(
+          (entry) =>
+              entry.key != null &&
+              (resolvedSchema.properties.containsKey(entry.key) ||
+                  entry.hasColon),
+        );
         if (!hasRecognizedKeys) {
           return null;
         }
@@ -774,7 +759,7 @@ class PartialJsonCompleter {
     final schemaJson = jsonDecode(schema.toJson()) as Map<String, dynamic>;
     final requiredProps =
         (schemaJson['required'] as List<dynamic>?)?.cast<String>().toSet() ??
-            {};
+        {};
 
     final result = <String, dynamic>{};
 
@@ -790,9 +775,10 @@ class PartialJsonCompleter {
       // Handle incomplete string keys
       if (entry.isIncompleteStringKey) {
         // Try to complete the key if it uniquely matches
-        final matches = schema.properties.keys
-            .where((prop) => prop.startsWith(key))
-            .toList();
+        final matches =
+            schema.properties.keys
+                .where((prop) => prop.startsWith(key))
+                .toList();
         if (matches.length == 1) {
           key = matches.first;
         }
@@ -822,20 +808,26 @@ class PartialJsonCompleter {
         // For required properties, only use explicit defaults,
         // not type defaults
         final isRequired = requiredProps.contains(key);
-        result[key] =
-            _getDefaultForSchema(propSchema, useTypeDefaults: !isRequired);
+        result[key] = _getDefaultForSchema(
+          propSchema,
+          useTypeDefaults: !isRequired,
+        );
       } else if (entry.isIncompleteStringKey && key != entry.key) {
         // Incomplete key that was completed to a unique match
         // Treat it as if it had a colon
         final isRequired = requiredProps.contains(key);
-        result[key] =
-            _getDefaultForSchema(propSchema, useTypeDefaults: !isRequired);
+        result[key] = _getDefaultForSchema(
+          propSchema,
+          useTypeDefaults: !isRequired,
+        );
       } else if (!entry.hasColon && schema.properties.containsKey(key)) {
         // Complete key without colon but matches a schema property exactly
         // This could happen with unquoted keys that match property names
         final isRequired = requiredProps.contains(key);
-        result[key] =
-            _getDefaultForSchema(propSchema, useTypeDefaults: !isRequired);
+        result[key] = _getDefaultForSchema(
+          propSchema,
+          useTypeDefaults: !isRequired,
+        );
       }
       // Otherwise skip the entry (no colon and no match)
     }
@@ -917,8 +909,10 @@ class PartialJsonCompleter {
     return num.tryParse(value) ?? 0;
   }
 
-  dynamic _getDefaultForSchema(JsonSchema schema,
-      {bool useTypeDefaults = true}) {
+  dynamic _getDefaultForSchema(
+    JsonSchema schema, {
+    bool useTypeDefaults = true,
+  }) {
     if (schema.defaultValue != null) {
       return schema.defaultValue;
     }
@@ -998,7 +992,7 @@ class PartialJsonCompleter {
     final schemaJson = jsonDecode(schema.toJson()) as Map<String, dynamic>;
     final requiredProps =
         (schemaJson['required'] as List<dynamic>?)?.cast<String>().toSet() ??
-            {};
+        {};
 
     // Apply defaults for defined properties
     for (final entry in schema.properties.entries) {
@@ -1088,10 +1082,7 @@ class PartialJsonCompleter {
           result[key] is Map<String, dynamic> &&
           value is Map<String, dynamic>) {
         // Recursively merge nested objects
-        result[key] = _deepMerge(
-          result[key] as Map<String, dynamic>,
-          value,
-        );
+        result[key] = _deepMerge(result[key] as Map<String, dynamic>, value);
       } else {
         // Override the value
         result[key] = value;

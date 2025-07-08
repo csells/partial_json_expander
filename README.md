@@ -92,8 +92,10 @@ await for (final chunk in stream) {
 ✅ Schema defaults for missing properties: `{"name":"John"}` → `{"name":"John","age":0,"active":true}`
 
 ### Advanced Features
-✅ **Single-char completion**: `{"f` → `{"firstName":"", "lastName":"", "age":0}` (when unique match + defaults)  
-✅ **Meaningful prefixes**: `{"temp` → `{"temperature":20, "humidity":50}` (4-char prefixes + defaults)  
+✅ **Property name completion**: `{"temp` → `{"temperature":20, "humidity":50}` (completes any unique prefix)  
+✅ **No arbitrary limits**: `{"tempera` → `{"temperature":20, ...}` (works for any length)  
+✅ **Works everywhere**: In root objects, nested objects, and inside arrays  
+✅ **Partial literals**: `{"active":tr` → `{"active":true}`, `{"value":nu` → `{"value":null}`  
 ✅ **Nested defaults**: Empty objects get all nested property defaults from schema  
 ✅ **AllOf schema merging**: Combines multiple schema definitions seamlessly  
 ✅ **Required property handling**: Doesn't add defaults for missing required fields  
@@ -104,8 +106,7 @@ await for (final chunk in stream) {
 ### Error Detection
 ❌ **Ambiguous prefixes**: `{"te` → `null` (multiple possible matches)  
 ❌ **Malformed JSON**: `{"a":1,,"b":2}` → `null` (double commas)  
-❌ **Invalid structure**: `{"a":1}}}` → `null` (extra closing braces)  
-❌ **Partial after complete**: `{"name":"John","la` → `null` (incomplete continuation)
+❌ **Invalid structure**: `{"a":1}}}` → `null` (extra closing braces)
 
 ## API Reference
 
@@ -155,15 +156,7 @@ chunks.
 - Complex nested incomplete structures may not be repairable
 - Arrays must have consistent types as defined in the schema
 
-### Known Issues (In Progress)
-- **Recursive schemas**: `$ref` support is basic (only `#` root references)
-- **Deeply nested structures**: Very large/deep structures may not parse correctly
-- **Complex property dependencies**: Schema dependencies not fully implemented
-- **Performance**: Large schemas or deeply nested content may be slow
-
-### Test Status
-- ✅ **89 tests passing** - Core functionality working well
-- ⚠️ **9 tests failing** - Edge cases and advanced features still in development
-- 📈 **90%+ success rate** on random chunked JSON scenarios
-
-The library is production-ready for most common use cases but may not handle all edge cases perfectly.
+### Known Limitations (By Design)
+- **Recursive schemas**: Array items with `$ref: '#'` don't get recursive defaults (avoids infinite expansion)
+- **Property dependencies**: Schema dependencies not fully implemented
+- **Performance**: Large schemas or deeply nested content may be slower

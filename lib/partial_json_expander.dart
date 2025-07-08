@@ -10,10 +10,7 @@ import 'src/partial_json_parser.dart';
 ///
 /// Returns the parsed JSON value which could be any valid JSON type
 /// (object, array, string, number, boolean, or null).
-dynamic expandPartialJson(
-  JsonSchema schema,
-  String partialJson,
-) {
+dynamic expandPartialJson(JsonSchema schema, String partialJson) {
   // Use the new custom parser
   final parser = PartialJsonParser();
   final completer = PartialJsonCompleter();
@@ -40,8 +37,10 @@ Stream<String> randomChunkedJson(
   var idx = 0;
   while (idx < json.length) {
     final remaining = json.length - idx;
-    final size =
-        min(remaining, minChunk + rng.nextInt(maxChunk - minChunk + 1));
+    final size = min(
+      remaining,
+      minChunk + rng.nextInt(maxChunk - minChunk + 1),
+    );
     yield json.substring(idx, idx + size);
     idx += size;
     await Future<dynamic>.delayed(Duration.zero);

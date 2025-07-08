@@ -44,7 +44,9 @@ The package consists of:
    - Supports property name completion when unique match exists
    
 2. **JSON Completion** (`PartialJsonCompleter`):
-   - Completes partial property names (single-char and meaningful prefixes)
+   - Completes partial property names based purely on uniqueness (no length limits)
+   - Works inside arrays and nested objects
+   - Completes partial boolean/null literals ("tr" → true, "nu" → null)
    - Applies schema defaults intelligently based on property requirements
    - Handles nested object creation with deep default merging
    - Preserves null values when valid per schema
@@ -52,6 +54,5 @@ The package consists of:
 
 ## Test Status
 
-- ✅ **89/98 tests passing** - Core functionality working well
-- ⚠️ **9 tests failing** - Edge cases with recursive schemas and deep nesting
-- 📈 **90%+ success rate** on random chunked JSON scenarios
+- ✅ **All tests passing** - Core functionality working well
+- 📈 **High success rate** on random chunked JSON scenarios
